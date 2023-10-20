@@ -7,8 +7,8 @@ import java.util.*;
 
 public class IslandTracker {
     public static void main(String[] args) {
-        String inputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level2_5.in";
-        String outputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level2\\out_2_5.txt";
+        String inputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level3_example.in";
+        String outputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level3\\test3.txt";
 
         try {
             Scanner scanner = new Scanner(new File(inputFile));
