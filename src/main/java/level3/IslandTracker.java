@@ -3,12 +3,14 @@ package level3;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Set;
 
 public class IslandTracker {
     public static void main(String[] args) {
-        String inputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level3_example.in";
-        String outputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level3\\test3.txt";
+        String inputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level3_5.in";
+        String outputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level3\\3_5.txt";
 
         try {
             Scanner scanner = new Scanner(new File(inputFile));
@@ -26,8 +28,8 @@ public class IslandTracker {
             scanner.nextLine();
 
             for (int i = 0; i < numRoutes; i++) {
-                List<String> route = Arrays.asList(scanner.nextLine().split(" "));
-                if (doesSeaRouteIntersect(route, mapSize)) {
+                String routeLine = scanner.nextLine();
+                if (doesSeaRouteIntersect(routeLine)) {
                     writer.write("INVALID\n");
                 } else {
                     writer.write("VALID\n");
@@ -41,23 +43,18 @@ public class IslandTracker {
         }
     }
 
-    private static boolean doesSeaRouteIntersect(List<String> route, int mapSize) {
+    private static boolean doesSeaRouteIntersect(String routeLine) {
+        String[] coordinates = routeLine.split(" ");
         Set<String> visited = new HashSet<>();
         int x = 0;
         int y = 0;
 
-        for (String coordinate : route) {
+        for (String coordinate : coordinates) {
             int newX = Integer.parseInt(coordinate.split(",")[0]);
             int newY = Integer.parseInt(coordinate.split(",")[1]);
 
-            if (newX < 0 || newX >= mapSize || newY < 0 || newY >= mapSize || visited.contains(newX + "," + newY)) {
-                return true; // Invalid or intersection detected
-            }
-
-            if (Math.abs(newX - x) == 1 && Math.abs(newY - y) == 1 &&
-                    (visited.contains((newX - 1) + "," + (newY)) ||
-                            visited.contains((newX) + "," + (newY - 1)))) {
-                return true; // Diagonal intersection detected
+            if (visited.contains(newX + "," + newY) || (x != newX && y != newY && visited.contains(x + "," + newY) && visited.contains(newX + "," + y))) {
+                return true; // Intersection detected
             }
 
             visited.add(newX + "," + newY);
@@ -65,6 +62,6 @@ public class IslandTracker {
             y = newY;
         }
 
-        return false; // No invalid or intersection found
+        return false; // No intersection found
     }
 }
