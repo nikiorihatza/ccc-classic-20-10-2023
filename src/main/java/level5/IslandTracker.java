@@ -17,8 +17,8 @@ public class IslandTracker {
     }
 
     public static void main(String[] args) {
-        String inputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level5_example.in";
-        String outputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level5\\test5.txt";
+        String inputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level5_example.in"; // Replace with your input file path
+        String outputFile = "D:\\OutsourcedIdeaProject\\ccc-classic-20-10-2023\\src\\resources\\level5\\test5.txt"; // Replace with your output file path
 
         try {
             Scanner scanner = new Scanner(new File(inputFile));
@@ -42,7 +42,7 @@ public class IslandTracker {
                 int y = Integer.parseInt(coordinateParts[1]);
                 List<String> validRoute = findEncirclingSeaRoute(map, x, y);
                 if (validRoute != null) {
-                    writer.write(String.join(" ", validRoute) + "\n");
+                    writeRouteToFile(validRoute, writer);
                 } else {
                     writer.write("NO ROUTE\n");
                 }
@@ -55,31 +55,93 @@ public class IslandTracker {
         }
     }
 
-    private static List<String> findEncirclingSeaRoute(char[][] map, int startX, int startY) {
-        int mapSize = map.length;
+    private static class Route {
+        List<String> path;
+        boolean[][] visited;
 
+        public Route(List<String> path, boolean[][] visited) {
+            this.path = path;
+            this.visited = visited;
+        }
+    }
+
+    private static boolean isValidCoordinate(int x, int y, int mapSize) {
+        return x >= 0 && x < mapSize && y >= 0 && y < mapSize;
+    }
+
+    private static Route DijkstraSearch(char[][] map, int startX, int startY) {
+        int mapSize = map.length;
         int[] dx = { 0, 1, 1, 1, 0, -1, -1, -1 };
         int[] dy = { -1, -1, 0, 1, 1, 1, 0, -1 };
 
-        for (int i = 0; i < 8; i++) {
-            int endX = startX + dx[i];
-            int endY = startY + dy[i];
+        int[][] distance = new int[mapSize][mapSize];
+        Point[][] prevPoint = new Point[mapSize][mapSize];
 
-            if (isValidCoordinate(endX, endY, mapSize) && map[endY][endX] == 'W') {
-                List<String> validRoute = dijkstra(map, startX, startY, endX, endY);
-                if (validRoute != null) {
-                    return validRoute;
+        for (int i = 0; i < mapSize; i++) {
+            Arrays.fill(distance[i], Integer.MAX_VALUE);
+        }
+
+        PriorityQueue<Point> queue = new PriorityQueue<>(Comparator.comparingInt(p -> distance[p.y][p.x]));
+
+        boolean[][] visited = new boolean[mapSize][mapSize];
+        visited[startY][startX] = true;
+
+        queue.offer(new Point(startX, startY));
+        distance[startY][startX] = 0;
+
+        while (!queue.isEmpty()) {
+            Point current = queue.poll();
+
+            int currentX = current.x;
+            int currentY = current.y;
+
+            for (int i = 0; i < 8; i++) {
+                int newX = currentX + dx[i];
+                int newY = currentY + dy[i];
+
+                if (isValidCoordinate(newX, newY, mapSize) && map[newY][newX] == 'W' && !visited[newY][newX]) {
+                    int newDistance = distance[currentY][currentX] + 1;
+
+                    if (newDistance < distance[newY][newX]) {
+                        distance[newY][newX] = newDistance;
+                        prevPoint[newY][newX] = current;
+                        queue.offer(new Point(newX, newY));
+                        visited[newY][newX] = true;
+                    }
                 }
             }
         }
 
-        return null; // No valid route found
+        // The route is not found
+        if (distance[startY][startX] == Integer.MAX_VALUE) {
+            return null;
+        }
+
+        // Reconstruct the path
+        List<String> path = new ArrayList<>();
+        int x = startX, y = startY;
+        visited = new boolean[mapSize][mapSize];
+
+        while (prevPoint[y][x] != null) {
+            Point current = prevPoint[y][x];
+            visited[y][x] = true;
+            path.add(x + "," + y);
+            x = current.x;
+            y = current.y;
+
+            if (visited[y][x]) {
+                return null;
+            }
+        }
+        path.add(x + "," + y);
+        Collections.reverse(path);
+
+        return new Route(path, visited);
     }
 
-    private static List<String> dijkstra(char[][] map, int startX, int startY, int endX, int endY) {
+    private static List<String> findEncirclingSeaRoute(char[][] map, int startX, int startY) {
         int mapSize = map.length;
         int[][] distance = new int[mapSize][mapSize];
-        boolean[][] visited = new boolean[mapSize][mapSize];
 
         for (int[] row : distance) {
             Arrays.fill(row, Integer.MAX_VALUE);
@@ -89,52 +151,49 @@ public class IslandTracker {
         queue.offer(new Point(startX, startY));
         distance[startY][startX] = 0;
 
+        List<String> bestRoute = null;
+        int shortestDistance = Integer.MAX_VALUE;
+        boolean[][] visited = new boolean[mapSize][mapSize];
+
         while (!queue.isEmpty()) {
             Point current = queue.poll();
+            visited[current.y][current.x] = true;
 
-            if (current.x == endX && current.y == endY) {
-                return reconstructPath(current);
-            }
-
-            if (visited[current.y][current.x]) {
+            if (distance[current.y][current.x] > shortestDistance) {
                 continue;
             }
 
-            visited[current.y][current.x] = true;
+            Route route = DijkstraSearch(map, current.x, current.y);
 
-            int[] dx = { 0, 1, 1, 1, 0, -1, -1, -1 };
-            int[] dy = { -1, -1, 0, 1, 1, 1, 0, -1 };
+            if (route != null) {
+                int routeLength = route.path.size();
 
-            for (int i = 0; i < 8; i++) {
-                int newX = current.x + dx[i];
-                int newY = current.y + dy[i];
+                if (routeLength > 0 && routeLength < shortestDistance) {
+                    shortestDistance = routeLength;
+                    bestRoute = route.path;
+                }
 
-                if (isValidCoordinate(newX, newY, mapSize) && map[newY][newX] == 'W' && !visited[newY][newX]) {
-                    int newDistance = distance[current.y][current.x] + 1;
-                    if (newDistance < distance[newY][newX]) {
-                        distance[newY][newX] = newDistance;
-                        Point next = new Point(newX, newY);
-                        next.prev = current;
-                        queue.offer(next);
+                for (int y = 0; y < mapSize; y++) {
+                    for (int x = 0; x < mapSize; x++) {
+                        if (!visited[y][x] && !route.visited[y][x]) {
+                            queue.offer(new Point(x, y));
+                            distance[y][x] = Math.min(distance[y][x], routeLength);
+                        }
                     }
                 }
             }
         }
 
-        return null; // No valid route found
+        return bestRoute;
     }
 
-    private static boolean isValidCoordinate(int x, int y, int mapSize) {
-        return x >= 0 && x < mapSize && y >= 0 && y < mapSize;
-    }
-
-    private static List<String> reconstructPath(Point end) {
-        List<String> path = new ArrayList<>();
-        while (end != null) {
-            path.add(end.x + "," + end.y);
-            end = end.prev;
+    private static void writeRouteToFile(List<String> route, FileWriter writer) {
+        if (route != null && !route.isEmpty()) {
+            try {
+                writer.write(String.join(" ", route) + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
-        Collections.reverse(path);
-        return path;
     }
 }
