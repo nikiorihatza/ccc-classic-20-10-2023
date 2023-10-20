@@ -22,17 +22,12 @@ public class IslandTracker {
                 map[i] = scanner.nextLine().toCharArray();
             }
 
-            int numTasks = scanner.nextInt();
-            System.out.println(numTasks);
+            int numRoutes = scanner.nextInt();
             scanner.nextLine();
 
-            System.out.println(scanner.hasNext());
-
-            for (int i = 0; i < numTasks; i++) {
-                String taskType = scanner.nextLine();
-
+            for (int i = 0; i < numRoutes; i++) {
                 List<String> route = Arrays.asList(scanner.nextLine().split(" "));
-                if (doesSeaRouteIntersect(route)) {
+                if (doesSeaRouteIntersect(route, mapSize)) {
                     writer.write("INVALID\n");
                 } else {
                     writer.write("VALID\n");
@@ -46,23 +41,7 @@ public class IslandTracker {
         }
     }
 
-    private static boolean areCoordinatesOnSameIsland(char[][] map, int[] coordinates1, int[] coordinates2) {
-        int x1 = coordinates1[0];
-        int y1 = coordinates1[1];
-        int x2 = coordinates2[0];
-        int y2 = coordinates2[1];
-
-        if (x1 < 0 || x1 >= map.length || x2 < 0 || x2 >= map.length || y1 < 0 || y1 >= map.length || y2 < 0 || y2 >= map.length) {
-            return false; // Coordinates out of bounds
-        }
-
-        char tile1 = map[y1][x1];
-        char tile2 = map[y2][x2];
-
-        return tile1 == 'L' && tile2 == 'L';
-    }
-
-    private static boolean doesSeaRouteIntersect(List<String> route) {
+    private static boolean doesSeaRouteIntersect(List<String> route, int mapSize) {
         Set<String> visited = new HashSet<>();
         int x = 0;
         int y = 0;
@@ -71,8 +50,14 @@ public class IslandTracker {
             int newX = Integer.parseInt(coordinate.split(",")[0]);
             int newY = Integer.parseInt(coordinate.split(",")[1]);
 
-            if (x == newX && y == newY || visited.contains(newX + "," + newY)) {
-                return true; // Intersection detected
+            if (newX < 0 || newX >= mapSize || newY < 0 || newY >= mapSize || visited.contains(newX + "," + newY)) {
+                return true; // Invalid or intersection detected
+            }
+
+            if (Math.abs(newX - x) == 1 && Math.abs(newY - y) == 1 &&
+                    (visited.contains((newX - 1) + "," + (newY)) ||
+                            visited.contains((newX) + "," + (newY - 1)))) {
+                return true; // Diagonal intersection detected
             }
 
             visited.add(newX + "," + newY);
@@ -80,6 +65,6 @@ public class IslandTracker {
             y = newY;
         }
 
-        return false; // No intersection found
+        return false; // No invalid or intersection found
     }
 }
